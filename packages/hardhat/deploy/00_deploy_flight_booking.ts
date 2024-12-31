@@ -3,7 +3,7 @@ import { DeployFunction } from "hardhat-deploy/types";
 import { Contract } from "ethers";
 import { airportCodes } from "../../const";
 
-function toSeconds(date: Date): number {
+export function toSeconds(date: Date): number {
   return Math.floor(date.getTime() / 1000);
 }
 
@@ -55,10 +55,10 @@ const deployYourContract: DeployFunction = async function (hre: HardhatRuntimeEn
 
   // Get the deployed contract to interact with it after deploying.
   const yourContract = await hre.ethers.getContract<Contract>("FlightBooking", deployer);
-
-  generateFlights(airportCodes, Date.now(), 365).map(
-    async flight =>
-      await yourContract.addFlight(
+  const flights = generateFlights(airportCodes, new Date(), 365);
+  await Promise.all(
+    flights.map(flight =>
+      yourContract.addFlight(
         flight.origin,
         flight.destination,
         toSeconds(flight.departureTime),
@@ -67,6 +67,7 @@ const deployYourContract: DeployFunction = async function (hre: HardhatRuntimeEn
         flight.pricePerTicket,
         { gasLimit: 30000000 },
       ),
+    ),
   );
   // await yourContract.addFlight( "SVX", "IST", parseDateTime("2024-06-14 21:34"), parseDateTime("2024-06-14 22:34"), 10);
   // await yourContract.addFlight( "SVX", "IST", parseDateTime("2024-06-15 06:34"), parseDateTime("2024-06-15 22:34"), 10);
@@ -92,7 +93,7 @@ const deployYourContract: DeployFunction = async function (hre: HardhatRuntimeEn
   // , flight.availableTickets)));
 };
 
-type Flight = {
+export type Flight = {
   origin: string;
   destination: string;
   departureTime: Date;
@@ -101,7 +102,7 @@ type Flight = {
   pricePerTicket: number;
 };
 
-function generateFlights(airports: string[], startDate: Date, numDays: number): Flight[] {
+export function generateFlights(airports: string[], startDate: Date, numDays: number): Flight[] {
   const flights: Flight[] = [];
 
   for (let day = 0; day < numDays; day++) {
